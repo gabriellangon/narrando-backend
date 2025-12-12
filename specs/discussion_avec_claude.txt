@@ -1,0 +1,181 @@
+# Stratégies d'Optimisation pour la Génération Automatique de Visites Guidées
+*Document Technique - Version 1.0*
+
+## Résumé Exécutif
+
+Ce document présente une analyse complète des stratégies d'optimisation pour la création automatique de parcours de visites guidées urbaines. L'approche proposée résout les limitations des algorithmes traditionnels de voyageur de commerce (TSP) en intégrant des contraintes géographiques, temporelles et narratives pour générer des expériences touristiques optimales.
+
+## 1. Problématique
+
+### 1.1 Contexte
+La génération automatique de visites guidées urbaines présente des défis uniques :
+- Densité variable des Points d'Intérêt (POIs) selon les zones urbaines
+- Contraintes de temps de marche (≤15 minutes entre POIs)
+- Nécessité de cohérence narrative et thématique
+- Optimisation multi-objectifs (distance, intérêt, praticabilité)
+
+### 1.2 Limitations des Approches Existantes
+L'approche classique **TSP → Découpage** génère des problèmes d'isolation :
+- Des POIs deviennent isolés après découpage temporel
+- Perte de connexions logiques entre POIs proches
+- Parcours sous-optimaux dans les zones denses (ex: Paris)
+
+## 2. Architecture Proposée
+
+### 2.1 Pipeline de Traitement
+```
+Collecte POIs → Enrichissement → Scoring → Clustering Géographique 
+→ Optimisation Locale → Validation → Génération de Variantes
+```
+
+### 2.2 Composants Clés
+
+#### A. Enrichissement Multi-Sources
+- **Sources primaires** : Google Maps, TripAdvisor, Foursquare
+- **Métadonnées** : Horaires, durées de visite, accessibilité
+- **Scoring pondéré** : Popularité (30%) + Intérêt historique (20%) + Accessibilité (20%) + Unicité (15%) + Temps optimal (15%)
+
+#### B. Filtrage Intelligent par IA
+- Utilisation de Perplexity AI pour sélection qualitative
+- **Optimisation** : Traitement par batches thématiques (5-8 requêtes vs 50 individuelles)
+- **Gain performance** : 150s → 20s de traitement
+
+## 3. Stratégies d'Optimisation
+
+### 3.1 Clustering Hybride
+
+#### Principe : Géographie d'abord, Thématique ensuite
+```python
+# Processus optimal
+1. Clustering géographique STRICT (≤15min marche)
+2. Pour chaque cluster géographique :
+   - Optimisation ordre par cohérence thématique locale
+   - Génération variantes par filtrage thématique
+   - Conservation version complète
+```
+
+#### Avantages :
+- Évite les zigzags géographiques
+- Maintient la cohérence narrative locale
+- Génère des parcours praticables
+
+### 3.2 Optimisation des Transitions
+
+#### Scoring des Transitions Pondéré
+```python
+Score_transition = Distance_géographique × 10 + Bonus_thématique × 0.5 - Pénalité_narrative × 2
+```
+
+#### Règle des 3 Minutes
+Autoriser réorganisation narrative seulement si :
+- Détour supplémentaire < 3 minutes
+- OU évite retour > 5 minutes  
+- ET gain narratif significatif
+
+### 3.3 Génération de Variantes Intelligentes
+Pour chaque cluster géographique :
+- **Parcours Express** : 4-5 POIs les plus populaires
+- **Parcours Thématiques** : Filtrage par catégorie dans le cluster
+- **Parcours Découverte** : Inclusion de POIs moins connus
+- **Variantes Météo** : Adaptation intérieur/extérieur
+
+## 4. Architecture Technique
+
+### 4.1 Infrastructure Cloud (AWS + Supabase)
+
+#### Composants :
+- **AWS Lambda** : Traitement des requêtes et optimisation
+- **Supabase** : Stockage données et cache intelligent
+- **ElastiCache** : Cache haute performance
+- **SQS** : Gestion des tâches asynchrones
+
+#### Performance Optimisée :
+- **Cache hit** : 1-2 secondes (visites répétées)
+- **Première visite** : ~30 secondes
+- **Parallélisation** : Traitement concurrent des clusters
+
+### 4.2 Génération Audio (Eleven Labs)
+
+#### Métriques :
+- **Temps génération** : 15-20 secondes pour 15 POIs (2min audio/POI)
+- **Coût estimé** : ~$0.60 par POI (2 minutes audio)
+- **Parallélisation** : Batches de 5 POIs simultanés
+
+#### Optimisations :
+- Génération progressive (5 premiers POIs prioritaires)
+- Cache des scripts similaires
+- Voix personnalisées par ville
+
+## 5. Algorithmes Recommandés
+
+### 5.1 Sans Machine Learning
+- **DBSCAN** : Clustering géographique avec contraintes temporelles
+- **Christofides** : TSP amélioré pour optimisation locale
+- **Dijkstra** : Calcul distances réelles (APIs routing)
+- **Algorithmes génétiques** : Optimisation multi-objectifs
+
+### 5.2 Avec Machine Learning (Optionnel)
+- **Reinforcement Learning** : Apprentissage préférences utilisateurs
+- **Graph Neural Networks** : Optimisation parcours complexes
+- **Recommandé uniquement** avec données de feedback significatives
+
+## 6. Métriques de Qualité
+
+### 6.1 Indicateurs Clés
+- **Couverture géographique** équilibrée
+- **Cohérence thématique** des transitions
+- **Respect contraintes temporelles** (100% des segments ≤15min)
+- **Diversité POIs** (éviter sur-représentation d'une catégorie)
+- **Praticabilité réelle** (horaires, accessibilité PMR)
+
+### 6.2 Validation Terrain
+- **APIs routing temps réel** (Google Directions, Mapbox)
+- **Données trafic dynamiques**
+- **Vérification horaires d'ouverture**
+- **Test utilisateur** : "Impression de tourner en rond ?"
+
+## 7. Performance et Coûts
+
+### 7.1 Temps de Traitement Optimisé
+| Étape | Temps Initial | Temps Optimisé | Optimisation |
+|-------|---------------|----------------|--------------|
+| Google Maps (50 POIs) | 2-5s | 5s | Parallélisation |
+| Filtrage Perplexity | 100-150s | 20s | Batching intelligent |
+| Optimisation parcours | 1-5s | 3s | Algorithmes améliorés |
+| **Total** | **2-3 minutes** | **30 secondes** | **80% réduction** |
+
+### 7.2 Coûts Estimés (1000 recherches/jour)
+- **Infrastructure AWS** : $20-35/mois
+- **Audio génération** : $18 par ville complète (30 POIs)
+- **APIs externes** : Variable selon usage
+
+## 8. Recommandations d'Implémentation
+
+### 8.1 Phase 1 : MVP
+1. Implémentation clustering géographique strict
+2. TSP local avec scoring transitions
+3. Cache basique (Redis)
+4. Génération audio séquentielle
+
+### 8.2 Phase 2 : Optimisation
+1. Batching intelligent Perplexity
+2. Parallélisation génération audio
+3. Variantes thématiques automatiques
+4. Métriques qualité avancées
+
+### 8.3 Phase 3 : Intelligence
+1. Système de feedback utilisateurs
+2. A/B testing parcours
+3. ML pour optimisation préférences
+4. Adaptation temps réel (météo, événements)
+
+## 9. Conclusion
+
+L'approche proposée résout les limitations des algorithmes TSP classiques en priorisant la géographie sur la thématique, tout en maintenant une cohérence narrative locale. L'architecture cloud optimisée permet des temps de réponse acceptables pour une expérience utilisateur mobile fluide.
+
+Les gains de performance (80% de réduction du temps de traitement) et la scalabilité de l'infrastructure justifient l'investissement technique pour une solution de génération automatique de visites guidées de qualité professionnelle.
+
+---
+
+*Document rédigé le 5 août 2025*  
+*Auteurs : Analyse collaborative Claude AI + Équipe Technique*

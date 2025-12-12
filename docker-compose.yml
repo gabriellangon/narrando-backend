@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  narrando-api:
+    build: .
+    container_name: narrando-api
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Service optionnel pour un reverse proxy (production)
+  nginx:
+    image: nginx:alpine
+    container_name: narrando-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - narrando-api
+    restart: unless-stopped
+    profiles:
+      - production
+
+# Volumes pour la persistance
+volumes:
+  narrando_data:
+    driver: local

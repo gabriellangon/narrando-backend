@@ -1,0 +1,65 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+ANALYSE_*.md
+RESULTATS_*.md
+WALKING_PATHS_*.md
+SUPPRESSION_*.md
+SOLUTION_*.md
+specs.md
+
+# Environment files
+.env
+.env.local
+.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache
+.coverage
+
+# Node modules (si existant)
+node_modules
+npm-debug.log
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Data files (sauf structure)
+data/*.json
+data/backup/*
+data/audio/*
+
+# Temp files
+lambda/
+lambda_v2/
+lambda_dist/
+test_lambda/
+test_lambda_dist/
+api/mobile_api.py
+
+# Keep structure folders
+!data/
+!data/backup/
+!data/audio/

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Narrando · Admin Tours</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.__ADMIN_CONFIG__ = {
+            supabaseReady: {{ 'true' if supabase_ready else 'false' }},
+            googleMapsKey: "{{ google_maps_key or '' }}",
+            mapsDisabled: {{ 'false' if google_maps_key else 'true' }}
+        };
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-10 space-y-6">
+        <header class="flex flex-col gap-2">
+            <p class="text-sm uppercase tracking-[0.3em] text-emerald-300">Narrando</p>
+            <h1 class="text-3xl font-semibold text-white">Admin – Tours & Attractions</h1>
+            <p class="text-slate-400">Réordonner les points, recalculer les walking paths, nettoyer les attractions douteuses.</p>
+            <div class="flex gap-3 pt-2">
+                <a href="/admin/" class="px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-200 border border-emerald-400/40 text-sm">Tours</a>
+                <a href="/admin/users" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-200 border border-slate-700 text-sm hover:border-emerald-400/60">Utilisateurs</a>
+            </div>
+        </header>
+
+        {% if not supabase_ready %}
+        <div class="border border-red-500/60 bg-red-500/10 text-red-200 rounded-xl p-4 text-sm">
+            ⚠️ Supabase n'est pas configuré (SUPABASE_URL / SUPABASE_SERVICE_KEY). Impossible d'utiliser l'admin.
+        </div>
+        {% endif %}
+
+        <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-lg shadow-black/40">
+            <div class="grid gap-4 md:grid-cols-3">
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm text-slate-400" for="citySelect">Ville</label>
+                    <select id="citySelect" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-60">
+                        <option value="">Choisir une ville</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm text-slate-400">Tours</label>
+                    <div id="toursInfo" class="text-base font-semibold">—</div>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm text-slate-400">Statut</label>
+                    <div id="statusMessage" class="text-emerald-300 text-base">Prêt</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-slate-900/50 border border-slate-800 rounded-2xl p-5 shadow-inner shadow-black/30 min-h-[200px]">
+            <h2 class="text-xl font-semibold mb-4 text-white">Tours disponibles</h2>
+            <div id="toursList" class="grid gap-3 md:grid-cols-2"></div>
+            <p id="noToursMessage" class="text-slate-500 text-sm hidden mt-4">Aucun tour pour cette ville.</p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl shadow-black/30">
+            <div class="flex flex-col lg:flex-row gap-6">
+                <div class="flex-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-semibold text-white">Points du tour</h3>
+                        <div class="space-x-2">
+                            <button id="resetOrderBtn" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 text-sm disabled:opacity-50" disabled>Réinitialiser</button>
+                            <button id="saveOrderBtn" class="px-4 py-2 rounded-xl bg-emerald-500 text-slate-900 font-semibold text-sm disabled:opacity-50" disabled>Sauvegarder l'ordre</button>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">Glisser-déposer pour réordonner. Supprimer retire définitivement l'attraction (traductions et walking paths compris).</p>
+                    <ul id="attractionList" class="space-y-3 min-h-[200px]">
+                        <li class="text-slate-500 text-sm">Sélectionnez un tour pour voir les attractions.</li>
+                    </ul>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-xl font-semibold text-white">Carte & walking paths</h3>
+                            <p class="text-slate-400 text-sm" id="mapStatus">En attente d'un tour.</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-slate-500">Distance</p>
+                            <p id="tourDistance" class="text-lg font-semibold text-white">—</p>
+                            <p class="text-sm text-slate-500">Temps estimé</p>
+                            <p id="tourDuration" class="text-lg font-semibold text-white">—</p>
+                        </div>
+                    </div>
+                    <div id="mapContainer" class="rounded-2xl border border-slate-800 bg-slate-900 min-h-[360px]">
+                        <div id="map" class="w-full h-[360px] rounded-2xl"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Pont de callback pour Google Maps : enregistre l'état même si le script se charge avant admin.js
+        window.__adminMapsReady = false;
+        window.narrandoAdminInitMap = function () {
+            window.__adminMapsReady = true;
+            if (typeof window.__adminOnMapsReady === "function") {
+                window.__adminOnMapsReady();
+            }
+        };
+    </script>
+    <script type="module" src="{{ url_for('admin.static', filename='admin.js') }}"></script>
+    {% if google_maps_key %}
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&callback=narrandoAdminInitMap&loading=async" async defer></script>
+    {% endif %}
+</body>
+</html>

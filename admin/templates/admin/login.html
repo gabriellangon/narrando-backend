@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Narrando · Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-md bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-2xl shadow-black/30">
+        <p class="text-sm uppercase tracking-[0.3em] text-emerald-300 mb-2">Narrando</p>
+        <h1 class="text-2xl font-semibold text-white mb-4">Accès Admin</h1>
+        <p class="text-slate-400 text-sm mb-6">Entrez la clé API pour accéder à l'interface d'administration.</p>
+        {% if error %}
+        <div class="mb-4 text-sm text-red-300 bg-red-500/10 border border-red-500/40 rounded-xl px-3 py-2">
+            {{ error }}
+        </div>
+        {% endif %}
+        <form method="POST" class="space-y-4">
+            <div class="flex flex-col gap-2">
+                <label class="text-sm text-slate-400" for="token">Clé API</label>
+                <input id="token" name="token" type="password" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="API_TOKEN" required />
+            </div>
+            <button type="submit" class="w-full px-4 py-2 rounded-xl bg-emerald-500 text-slate-900 font-semibold text-sm hover:bg-emerald-400 transition">
+                Continuer
+            </button>
+        </form>
+    </div>
+</body>
+</html>
