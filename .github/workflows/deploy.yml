@@ -166,6 +166,10 @@ jobs:
         ENV_FILE="\${APP_DIR}/.env"
 
         mkdir -p "\${APP_DIR}" "\${DATA_DIR}" "\${LOGS_DIR}"
+        if [ ! -f "\${ENV_FILE}" ]; then
+          echo "❌ Missing .env at \${ENV_FILE}"
+          exit 1
+        fi
 
         echo "🔐 Logging into GHCR"
         echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
@@ -186,7 +190,7 @@ jobs:
           -v "\${LOGS_DIR}:/app/logs" \
           "${IMAGE_TAG}"
 
-        docker ps --filter "name=\${CONTAINER_NAME}"
+        docker ps --filter "name=${CONTAINER_NAME}"
         EOF
 
   deploy-production:
@@ -269,6 +273,10 @@ jobs:
         ENV_FILE="\${APP_DIR}/.env"
 
         mkdir -p "\${APP_DIR}" "\${DATA_DIR}" "\${LOGS_DIR}"
+        if [ ! -f "\${ENV_FILE}" ]; then
+          echo "❌ Missing .env at \${ENV_FILE}"
+          exit 1
+        fi
 
         echo "🔐 Logging into GHCR"
         echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
@@ -289,5 +297,5 @@ jobs:
           -v "\${LOGS_DIR}:/app/logs" \
           "${IMAGE_TAG}"
 
-        docker ps --filter "name=\${CONTAINER_NAME}"
+        docker ps --filter "name=${CONTAINER_NAME}"
         EOF
