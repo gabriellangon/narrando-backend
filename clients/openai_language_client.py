@@ -138,30 +138,25 @@ class OpenAILanguageClient:
         ]
 
         system_prompt = (
-            "You are a creative travel copywriter who crafts unique, memorable tour names. "
-            "Always return a punchy English tour name in Title Case, no explanations. "
-            "Be creative and avoid repetitive words like 'Treasures', 'Heritage', 'Historic Tour', "
-            "'Hidden Gems' or 'Stroll'. Keep it under 40 characters and at most 4 words."
+            "You are a concise travel copywriter. Return ONLY a short, clear tour name in English "
+            "and in Title Case (1–3 words, ≤25 characters), no explanations. Avoid marketing fluff "
+            "and overused words such as Odyssey, Journey, Trail, Trek, Quest, Gems, Treasures, "
+            "Secrets, Heritage, Epic, Ultimate, Adventure. Aim for descriptive, grounded names."
         )
         user_prompt = (
             f"City: {city}, Country: {country}\n"
             f"Points of interest:\n{json.dumps(points_preview, ensure_ascii=False, indent=2)}\n\n"
-            "Create ONE original, catchy, marketing-ready tour name in English.\n\n"
+            "Create ONE original, concise tour name. Output MUST be in ENGLISH only.\n\n"
             "Requirements:\n"
-            "- ≤4 words, ≤40 characters, Title Case\n"
-            "- Be CREATIVE and VARIED (avoid overused words like 'Treasures', 'Heritage', 'Gems', 'Secrets', 'Essentials', 'Guided', 'Tour')\n"
-            "- Use diverse styles: action verbs, evocative phrases, thematic concepts\n"
-            "- Mix structures: verbs (\"Discover\"), evocative adjectives (\"Midnight\"), conceptual nouns (\"Legends\"), or poetic mashups\n"
-            "- Avoid starting systematically with 'Visit', 'Tour', or 'Explore the'\n"
-            "- No quotes, no extra text\n\n"
-            "Style examples (create something different from these):\n"
-            "- Capital Highlights Trail\n"
-            "- Seine Secrets Voyage\n"
-            "- Iconic Squares Circuit\n"
-            "- Midnight Monuments Loop\n"
-            "- Artisans & Arches Journey\n"
-            "- Street Stories Path\n"
-            "- Belle Époque Echoes"
+            "- 1–3 words, ≤25 characters, Title Case\n"
+            "- Plain, descriptive, not grandiose; avoid Odyssey/Journey/Trail/Trek/Quest/etc.\n"
+            "- No quotes, no extra text, no punctuation except spaces\n\n"
+            "Style examples (stay even simpler):\n"
+            "- Riverfront Landmarks\n"
+            "- Old Town Highlights\n"
+            "- Waterfront Icons\n"
+            "- Market Squares\n"
+            "- Colonial Heritage"
         )
 
         content = self._chat_completion(
