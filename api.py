@@ -1273,7 +1273,6 @@ Output format (strict):
 - Only the narration text, without any preamble, apology, or explanation.
 - No sentences like "voici", "en français", or "voici la description". Jump straight into the narration.
             """
-            """
             
             # Appel à l'API Perplexity
             response = requests.post(
