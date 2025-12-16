@@ -16,6 +16,10 @@ on:
         - staging
         - production
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: narrando-api
@@ -119,6 +123,72 @@ jobs:
         echo "✅ Image pushed: $IMAGE_TAG"
         echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+  deploy-staging-vps:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Add SSH key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
+
+    - name: Add VPS host to known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        PORT="${{ secrets.STAGING_SSH_PORT }}"
+        HOST="${{ secrets.STAGING_SSH_HOST }}"
+        ssh-keyscan -p "${PORT:-22}" "${HOST}" >> ~/.ssh/known_hosts
+
+    - name: Deploy image on VPS
+      env:
+        IMAGE_TAG: ${{ needs.deploy-staging.outputs.image_tag }}
+        VPS_HOST: ${{ secrets.STAGING_SSH_HOST }}
+        VPS_USER: ${{ secrets.STAGING_SSH_USER }}
+        VPS_PORT: ${{ secrets.STAGING_SSH_PORT }}
+        APP_DIR: ${{ secrets.STAGING_APP_DIR }}
+        CONTAINER_NAME: narrando-api
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
+      run: |
+        ssh -p "${VPS_PORT:-22}" "${VPS_USER}@${VPS_HOST}" <<EOF
+        set -euo pipefail
+
+        APP_DIR="${APP_DIR:-/srv/narrando}"
+        DATA_DIR="\${APP_DIR}/data"
+        LOGS_DIR="\${APP_DIR}/logs"
+        ENV_FILE="\${APP_DIR}/.env"
+
+        mkdir -p "\${APP_DIR}" "\${DATA_DIR}" "\${LOGS_DIR}"
+
+        echo "🔐 Logging into GHCR"
+        echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+
+        echo "⬇️  Pulling image ${IMAGE_TAG}"
+        docker pull "${IMAGE_TAG}"
+
+        echo "🛑 Stopping old container if present"
+        docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+        docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+
+        echo "🚀 Starting container ${CONTAINER_NAME}"
+        docker run -d \
+          --name "${CONTAINER_NAME}" \
+          --env-file "\${ENV_FILE}" \
+          -p 5000:5000 \
+          -v "\${DATA_DIR}:/app/data" \
+          -v "\${LOGS_DIR}:/app/logs" \
+          "${IMAGE_TAG}"
+
+        docker ps --filter "name=\${CONTAINER_NAME}"
+        EOF
+
   deploy-production:
     needs: test
     runs-on: ubuntu-latest
@@ -155,3 +225,69 @@ jobs:
 
         echo "✅ Image pushed: $IMAGE_TAG"
         echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  deploy-production-vps:
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Add SSH key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
+
+    - name: Add VPS host to known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        PORT="${{ secrets.PROD_SSH_PORT }}"
+        HOST="${{ secrets.PROD_SSH_HOST }}"
+        ssh-keyscan -p "${PORT:-22}" "${HOST}" >> ~/.ssh/known_hosts
+
+    - name: Deploy image on VPS
+      env:
+        IMAGE_TAG: ${{ needs.deploy-production.outputs.image_tag }}
+        VPS_HOST: ${{ secrets.PROD_SSH_HOST }}
+        VPS_USER: ${{ secrets.PROD_SSH_USER }}
+        VPS_PORT: ${{ secrets.PROD_SSH_PORT }}
+        APP_DIR: ${{ secrets.PROD_APP_DIR }}
+        CONTAINER_NAME: narrando-api
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
+      run: |
+        ssh -p "${VPS_PORT:-22}" "${VPS_USER}@${VPS_HOST}" <<EOF
+        set -euo pipefail
+
+        APP_DIR="${APP_DIR:-/srv/narrando}"
+        DATA_DIR="\${APP_DIR}/data"
+        LOGS_DIR="\${APP_DIR}/logs"
+        ENV_FILE="\${APP_DIR}/.env"
+
+        mkdir -p "\${APP_DIR}" "\${DATA_DIR}" "\${LOGS_DIR}"
+
+        echo "🔐 Logging into GHCR"
+        echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+
+        echo "⬇️  Pulling image ${IMAGE_TAG}"
+        docker pull "${IMAGE_TAG}"
+
+        echo "🛑 Stopping old container if present"
+        docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+        docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+
+        echo "🚀 Starting container ${CONTAINER_NAME}"
+        docker run -d \
+          --name "${CONTAINER_NAME}" \
+          --env-file "\${ENV_FILE}" \
+          -p 5000:5000 \
+          -v "\${DATA_DIR}:/app/data" \
+          -v "\${LOGS_DIR}:/app/logs" \
+          "${IMAGE_TAG}"
+
+        docker ps --filter "name=\${CONTAINER_NAME}"
+        EOF
